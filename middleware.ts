@@ -6,7 +6,7 @@ import authConfig from "@/lib/auth.config";
 // since middleware always runs on the Edge Runtime.
 const { auth } = NextAuth(authConfig);
 
-const PUBLIC_PATHS = ["/login", "/register", "/api/auth"];
+const PUBLIC_PATHS = ["/login", "/register", "/api/auth", "/api/setup"];
 
 export default auth((req) => {
   const { pathname } = req.nextUrl;
