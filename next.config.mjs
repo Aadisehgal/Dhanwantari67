@@ -46,6 +46,9 @@ const withPWA = withPWAInit({
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
+    outputFileTracingIncludes: {
+      "/**/*": ["./node_modules/.prisma/client/**"],
+    },
     serverActions: {
       bodySizeLimit: "10mb",
     },
