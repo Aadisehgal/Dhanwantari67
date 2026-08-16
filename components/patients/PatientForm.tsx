@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
@@ -18,7 +18,6 @@ export function PatientForm() {
     handleSubmit,
     getValues,
     setValue,
-    watch,
     formState: { errors },
   } = useForm<PatientFormValues>({
     resolver: zodResolver(patientSchema),
@@ -26,7 +25,6 @@ export function PatientForm() {
   });
 
   const [ageInput, setAgeInput] = useState("");
-  const dobValue = watch("dob");
 
   // Typing an age fills in an approximate date of birth (Jan 1 of the birth year).
   function handleAgeChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -39,10 +37,10 @@ export function PatientForm() {
     }
   }
 
-  // Typing an exact DOB clears the approximate age helper so they don't fight each other.
-  useEffect(() => {
-    if (dobValue) setAgeInput("");
-  }, [dobValue]);
+  // Typing directly into the date field takes precedence over the age helper.
+  function handleDobChange(e: React.ChangeEvent<HTMLInputElement>) {
+    if (e.target.value) setAgeInput("");
+  }
 
   async function submit(values: PatientFormValues, force = false) {
     setSubmitting(true);
@@ -77,7 +75,11 @@ export function PatientForm() {
           <input {...register("phone")} className="input" placeholder="9876543210" />
         </Field>
         <Field label="Date of Birth">
-          <input type="date" {...register("dob")} className="input" />
+          <input
+            type="date"
+            {...register("dob", { onChange: handleDobChange })}
+            className="input"
+          />
           <div className="mt-1 flex items-center gap-2">
             <span className="text-xs text-neutral-500">or just enter age:</span>
             <input
