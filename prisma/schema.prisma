@@ -1,19 +1,21 @@
 // Dhanwantari Healthcare — Prisma Schema
 // Phase 1: Core structure for Auth, RBAC, Patients, Appointments, EMR skeleton.
 // Later phases expand IPD/OT/Lab/Pharmacy/Billing/HR to full detail.
+
 generator client {
-  engineType = "client"
-  binaryTargets = ["native", "linux-arm64-openssl-3.0.x"]
   provider = "prisma-client-js"
 }
+
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
+
 // ---------------------------------------------------------------------------
 // ENUMS
 // ---------------------------------------------------------------------------
+
 enum RoleName {
   SUPER_ADMIN
   HOSPITAL_ADMIN
@@ -28,6 +30,7 @@ enum RoleName {
   HR_MANAGER
   PATIENT
 }
+
 enum ModuleName {
   DASHBOARD
   PATIENTS
@@ -45,6 +48,7 @@ enum ModuleName {
   SETTINGS
   NOTIFICATIONS
 }
+
 enum ActionName {
   VIEW
   CREATE
@@ -53,6 +57,7 @@ enum ActionName {
   APPROVE
   EXPORT
 }
+
 enum AppointmentStatus {
   BOOKED
   ARRIVED
@@ -61,6 +66,7 @@ enum AppointmentStatus {
   CANCELLED
   NO_SHOW
 }
+
 enum TokenStatus {
   WAITING
   CALLED
@@ -68,6 +74,7 @@ enum TokenStatus {
   COMPLETED
   NO_SHOW
 }
+
 enum BedStatus {
   VACANT
   OCCUPIED
@@ -75,6 +82,7 @@ enum BedStatus {
   RESERVED
   MAINTENANCE
 }
+
 enum InvoiceStatus {
   DRAFT
   PENDING
@@ -83,6 +91,7 @@ enum InvoiceStatus {
   CANCELLED
   REFUNDED
 }
+
 enum PaymentMode {
   CASH
   CARD
@@ -91,14 +100,17 @@ enum PaymentMode {
   BANK_TRANSFER
   WALLET
 }
+
 enum Gender {
   MALE
   FEMALE
   OTHER
 }
+
 // ---------------------------------------------------------------------------
 // HOSPITAL / BRANCH / RBAC
 // ---------------------------------------------------------------------------
+
 model Hospital {
   id        String   @id @default(cuid())
   name      String
@@ -107,10 +119,13 @@ model Hospital {
   address   String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
   branches Branch[]
   settings SystemSetting[]
+
   @@map("hospitals")
 }
+
 model Branch {
   id         String   @id @default(cuid())
   hospitalId String
@@ -120,6 +135,7 @@ model Branch {
   phone      String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+
   hospital     Hospital      @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
   users        User[]
   patients     Patient[]
@@ -133,38 +149,49 @@ model Branch {
   labOrders    LabOrder[]
   announcements Announcement[]
   complaints    Complaint[]
+
   @@unique([hospitalId, code])
   @@index([hospitalId])
   @@map("branches")
 }
+
 model Role {
   id          String   @id @default(cuid())
   name        RoleName
   isCustom    Boolean  @default(false)
   label       String
   createdAt   DateTime @default(now())
+
   users           User[]
   rolePermissions RolePermission[]
+
   @@unique([name])
   @@map("roles")
 }
+
 model Permission {
   id     String     @id @default(cuid())
   module ModuleName
   action ActionName
+
   rolePermissions RolePermission[]
+
   @@unique([module, action])
   @@map("permissions")
 }
+
 model RolePermission {
   id           String @id @default(cuid())
   roleId       String
   permissionId String
+
   role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
   permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
   @@unique([roleId, permissionId])
   @@map("role_permissions")
 }
+
 model User {
   id              String    @id @default(cuid())
   branchId        String?
@@ -178,6 +205,7 @@ model User {
   isActive        Boolean   @default(true)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+
   branch   Branch? @relation(fields: [branchId], references: [id])
   role     Role    @relation(fields: [roleId], references: [id])
   doctor   Doctor?
@@ -185,20 +213,26 @@ model User {
   patient  Patient? @relation("PatientUser")
   auditLogs AuditLog[]
   notifications Notification[]
+
   @@index([branchId])
   @@index([email])
   @@map("users")
 }
+
 // ---------------------------------------------------------------------------
 // PATIENTS
 // ---------------------------------------------------------------------------
+
 model PatientFamily {
   id        String    @id @default(cuid())
   familyId  String    @unique // shared family code
   createdAt DateTime  @default(now())
+
   members Patient[]
+
   @@map("patient_families")
 }
+
 model Patient {
   id              String    @id @default(cuid())
   userId          String?   @unique
@@ -220,6 +254,7 @@ model Patient {
   emergencyPhone  String?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+
   branch       Branch          @relation(fields: [branchId], references: [id])
   family       PatientFamily?  @relation(fields: [familyId], references: [id])
   user         User?           @relation("PatientUser", fields: [userId], references: [id])
@@ -235,14 +270,18 @@ model Patient {
   complaints   Complaint[]
   vaccinationRecords VaccinationRecord[]
   chronicConditions  ChronicCondition[]
+  documents          PatientDocument[]
+
   @@index([branchId])
   @@index([phone])
   @@index([name])
   @@map("patients")
 }
+
 // ---------------------------------------------------------------------------
 // DOCTORS / SCHEDULING / APPOINTMENTS / QUEUE
 // ---------------------------------------------------------------------------
+
 model Doctor {
   id             String   @id @default(cuid())
   userId         String   @unique
@@ -250,6 +289,7 @@ model Doctor {
   qualification  String?
   signatureUrl   String?
   avgConsultMins Int      @default(15) // used for queue wait-time moving average
+
   user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   schedules    DoctorSchedule[]
   leaves       DoctorLeave[]
@@ -260,27 +300,35 @@ model Doctor {
   labOrders    LabOrder[]
   feedback     Feedback[]
   prescriptions Prescription[]
+
   @@map("doctors")
 }
+
 model DoctorSchedule {
   id        String   @id @default(cuid())
   doctorId  String
   dayOfWeek Int // 0=Sunday..6=Saturday
   startTime String // "09:00"
   endTime   String // "17:00"
+
   doctor Doctor @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
   @@index([doctorId])
   @@map("doctor_schedules")
 }
+
 model DoctorLeave {
   id        String   @id @default(cuid())
   doctorId  String
   startDate DateTime
   endDate   DateTime
   reason    String?
+
   doctor Doctor @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
   @@map("doctor_leaves")
 }
+
 model Appointment {
   id          String            @id @default(cuid())
   branchId    String
@@ -292,14 +340,17 @@ model Appointment {
   isFollowUp  Boolean           @default(false)
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
+
   branch  Branch  @relation(fields: [branchId], references: [id])
   patient Patient @relation(fields: [patientId], references: [id])
   doctor  Doctor  @relation(fields: [doctorId], references: [id])
   token   Token?
+
   @@index([branchId, scheduledAt])
   @@index([doctorId, scheduledAt])
   @@map("appointments")
 }
+
 model Token {
   id            String      @id @default(cuid())
   appointmentId String      @unique
@@ -309,11 +360,14 @@ model Token {
   calledAt      DateTime?
   completedAt   DateTime?
   createdAt     DateTime    @default(now())
+
   appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
   doctor      Doctor      @relation(fields: [doctorId], references: [id])
+
   @@index([doctorId, createdAt])
   @@map("tokens")
 }
+
 model Vitals {
   id          String   @id @default(cuid())
   patientId   String
@@ -321,48 +375,62 @@ model Vitals {
   pulse       Int?
   temperature Float?
   spo2        Int?
+  bloodSugar  Float?
   weightKg    Float?
   heightCm    Float?
   bmi         Float?
   recordedAt  DateTime @default(now())
+
   patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
   @@index([patientId, recordedAt])
   @@map("vitals")
 }
+
 // ---------------------------------------------------------------------------
 // EMR / PRESCRIPTIONS (skeleton — expanded in Phase 3)
 // ---------------------------------------------------------------------------
+
 model EMR {
   id        String   @id @default(cuid())
   patientId String
   visitType String // OPD / IPD
   notes     String?
   createdAt DateTime @default(now())
+
   patient       Patient        @relation(fields: [patientId], references: [id], onDelete: Cascade)
   diagnoses     Diagnosis[]
   prescriptions Prescription[]
+
   @@index([patientId, createdAt])
   @@map("emr_entries")
 }
+
 model Diagnosis {
   id        String @id @default(cuid())
   emrId     String
   icd10Code String
   label     String
+
   emr EMR @relation(fields: [emrId], references: [id], onDelete: Cascade)
+
   @@map("diagnoses")
 }
+
 model Prescription {
   id        String   @id @default(cuid())
   emrId     String
   doctorId  String
   createdAt DateTime @default(now())
+
   emr    EMR    @relation(fields: [emrId], references: [id], onDelete: Cascade)
   doctor Doctor @relation(fields: [doctorId], references: [id])
   items PrescriptionItem[]
   dispenses Dispense[]
+
   @@map("prescriptions")
 }
+
 model PrescriptionItem {
   id             String @id @default(cuid())
   prescriptionId String
@@ -371,21 +439,27 @@ model PrescriptionItem {
   frequency      String
   durationDays   Int
   instructions   String?
+
   prescription Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
+
   @@map("prescription_items")
 }
+
 model DrugInteraction {
   id       String @id @default(cuid())
   drugA    String
   drugB    String
   severity String
   note     String?
+
   @@unique([drugA, drugB])
   @@map("drug_interactions")
 }
+
 // ---------------------------------------------------------------------------
 // LAB (skeleton)
 // ---------------------------------------------------------------------------
+
 model LabTest {
   id          String @id @default(cuid())
   name        String
@@ -395,9 +469,12 @@ model LabTest {
   unit        String?
   sampleType  String?
   tatHours    Int?
+
   orders LabOrder[]
+
   @@map("lab_tests")
 }
+
 enum LabOrderStatus {
   ORDERED
   SAMPLE_COLLECTED
@@ -405,6 +482,7 @@ enum LabOrderStatus {
   COMPLETED
   CANCELLED
 }
+
 model LabOrder {
   id                String         @id @default(cuid())
   branchId          String
@@ -415,15 +493,18 @@ model LabOrder {
   sampleBarcode     String?        @unique
   sampleCollectedAt DateTime?
   createdAt         DateTime       @default(now())
+
   branch         Branch     @relation(fields: [branchId], references: [id])
   patient        Patient    @relation(fields: [patientId], references: [id])
   test           LabTest    @relation(fields: [testId], references: [id])
   orderedByDoctor Doctor?   @relation(fields: [orderedByDoctorId], references: [id])
   result         LabResult?
+
   @@index([branchId, status])
   @@index([patientId])
   @@map("lab_orders")
 }
+
 model LabResult {
   id               String    @id @default(cuid())
   labOrderId       String    @unique
@@ -435,36 +516,47 @@ model LabResult {
   releasedByUserId String?
   releasedAt       DateTime?
   createdAt        DateTime  @default(now())
+
   labOrder LabOrder @relation(fields: [labOrderId], references: [id], onDelete: Cascade)
+
   @@map("lab_results")
 }
+
 // ---------------------------------------------------------------------------
 // IPD / WARD / BED
 // ---------------------------------------------------------------------------
+
 model Ward {
   id       String @id @default(cuid())
   branchId String
   name     String
   type     String
+
   branch Branch @relation(fields: [branchId], references: [id])
   beds   Bed[]
+
   @@map("wards")
 }
+
 model Bed {
   id        String    @id @default(cuid())
   wardId    String
   label     String
   status    BedStatus @default(VACANT)
   dailyRate Decimal   @db.Decimal(10, 2) @default(1000)
+
   ward       Ward        @relation(fields: [wardId], references: [id], onDelete: Cascade)
   admissions Admission[]
+
   @@map("beds")
 }
+
 enum AdmissionStatus {
   ADMITTED
   DISCHARGED
   TRANSFERRED
 }
+
 model Admission {
   id                String          @id @default(cuid())
   patientId         String
@@ -474,6 +566,7 @@ model Admission {
   status            AdmissionStatus @default(ADMITTED)
   admittedAt        DateTime        @default(now())
   dischargedAt      DateTime?
+
   patient         Patient          @relation(fields: [patientId], references: [id])
   bed              Bed             @relation(fields: [bedId], references: [id])
   admittingDoctor  Doctor?         @relation(fields: [admittingDoctorId], references: [id])
@@ -481,10 +574,12 @@ model Admission {
   dischargeSummary DischargeSummary?
   otBookings       OTBooking[]
   consentForms     ConsentForm[]
+
   @@index([patientId])
   @@index([bedId])
   @@map("admissions")
 }
+
 // Periodic bedside vitals/notes during an inpatient stay — the IPD equivalent of OPD vitals.
 model NursingNote {
   id           String   @id @default(cuid())
@@ -496,10 +591,13 @@ model NursingNote {
   spo2         Int?
   recordedBy   String?
   recordedAt   DateTime @default(now())
+
   admission Admission @relation(fields: [admissionId], references: [id], onDelete: Cascade)
+
   @@index([admissionId, recordedAt])
   @@map("nursing_notes")
 }
+
 // Formal discharge documentation — diagnosis, treatment given, and follow-up plan.
 model DischargeSummary {
   id                   String   @id @default(cuid())
@@ -510,18 +608,23 @@ model DischargeSummary {
   followUpDate         DateTime?
   dischargedByDoctorId String?
   createdAt            DateTime @default(now())
+
   admission Admission @relation(fields: [admissionId], references: [id], onDelete: Cascade)
+
   @@map("discharge_summaries")
 }
+
 // ---------------------------------------------------------------------------
 // OT (OPERATION THEATRE)
 // ---------------------------------------------------------------------------
+
 enum OTStatus {
   SCHEDULED
   IN_PROGRESS
   COMPLETED
   CANCELLED
 }
+
 model OTBooking {
   id            String   @id @default(cuid())
   branchId      String
@@ -535,17 +638,21 @@ model OTBooking {
   status        OTStatus @default(SCHEDULED)
   notes         String?
   createdAt     DateTime @default(now())
+
   branch    Branch     @relation(fields: [branchId], references: [id])
   patient   Patient    @relation(fields: [patientId], references: [id])
   admission Admission? @relation(fields: [admissionId], references: [id])
   surgeon   Doctor     @relation(fields: [surgeonId], references: [id])
+
   @@index([branchId, scheduledAt])
   @@index([otRoom, scheduledAt])
   @@map("ot_bookings")
 }
+
 // ---------------------------------------------------------------------------
 // CONSENT FORMS (e-signature)
 // ---------------------------------------------------------------------------
+
 enum ConsentFormType {
   SURGICAL_CONSENT
   ANESTHESIA_CONSENT
@@ -553,6 +660,7 @@ enum ConsentFormType {
   PROCEDURE_CONSENT
   GENERAL_CONSENT
 }
+
 model ConsentForm {
   id                String          @id @default(cuid())
   admissionId       String?
@@ -564,14 +672,18 @@ model ConsentForm {
   signatureDataUrl  String // base64 PNG from the signature-capture canvas
   witnessName       String?
   signedAt          DateTime        @default(now())
+
   admission Admission? @relation(fields: [admissionId], references: [id])
   patient   Patient    @relation(fields: [patientId], references: [id])
+
   @@index([patientId])
   @@map("consent_forms")
 }
+
 // ---------------------------------------------------------------------------
 // PHARMACY / INVENTORY
 // ---------------------------------------------------------------------------
+
 model Supplier {
   id        String   @id @default(cuid())
   branchId  String
@@ -581,11 +693,14 @@ model Supplier {
   email     String?
   address   String?
   createdAt DateTime @default(now())
+
   branch        Branch          @relation(fields: [branchId], references: [id])
   purchaseOrders PurchaseOrder[]
+
   @@index([branchId])
   @@map("suppliers")
 }
+
 model MedicineBatch {
   id            String   @id @default(cuid())
   branchId      String
@@ -600,15 +715,18 @@ model MedicineBatch {
   minStockQty   Int      @default(10)
   barcode       String?  @unique
   createdAt     DateTime @default(now())
+
   branch             Branch               @relation(fields: [branchId], references: [id])
   stockMovements      StockMovement[]
   internalConsumption InternalConsumption[]
   dispenseItems       DispenseItem[]
   poItems             PurchaseOrderItem[]
+
   @@index([branchId, expiryDate])
   @@index([branchId, stockQty])
   @@map("medicine_batches")
 }
+
 model PurchaseOrder {
   id          String   @id @default(cuid())
   branchId    String
@@ -616,13 +734,16 @@ model PurchaseOrder {
   poNumber    String   @unique
   status      String   @default("DRAFT") // DRAFT / SENT / RECEIVED / CANCELLED
   createdAt   DateTime @default(now())
+
   branch   Branch              @relation(fields: [branchId], references: [id])
   supplier Supplier            @relation(fields: [supplierId], references: [id])
   items    PurchaseOrderItem[]
   grns     GRN[]
+
   @@index([branchId])
   @@map("purchase_orders")
 }
+
 model PurchaseOrderItem {
   id              String  @id @default(cuid())
   purchaseOrderId String
@@ -630,10 +751,13 @@ model PurchaseOrderItem {
   brandName       String
   quantity        Int
   unitCost        Decimal @db.Decimal(10, 2)
+
   purchaseOrder PurchaseOrder  @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
   medicineBatch MedicineBatch? @relation(fields: [medicineBatchId], references: [id])
+
   @@map("purchase_order_items")
 }
+
 // Goods Received Note — records physical receipt of a purchase order, triggers stock-in.
 model GRN {
   id              String   @id @default(cuid())
@@ -641,9 +765,12 @@ model GRN {
   receivedAt      DateTime @default(now())
   receivedBy      String?
   notes           String?
+
   purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
+
   @@map("grns")
 }
+
 enum StockMovementType {
   PURCHASE_IN
   SALE_OUT
@@ -653,6 +780,7 @@ enum StockMovementType {
   RETURN_IN
   EXPIRED_WRITE_OFF
 }
+
 // Immutable ledger of every stock change — the audit trail for inventory.
 model StockMovement {
   id              String            @id @default(cuid())
@@ -662,10 +790,13 @@ model StockMovement {
   reference       String? // invoiceId / prescriptionId / poId, for traceability
   note            String?
   createdAt       DateTime          @default(now())
+
   medicineBatch MedicineBatch @relation(fields: [medicineBatchId], references: [id])
+
   @@index([medicineBatchId, createdAt])
   @@map("stock_movements")
 }
+
 // Ward/OT/department internal usage — not billed to a patient, still deducts stock.
 model InternalConsumption {
   id              String   @id @default(cuid())
@@ -674,9 +805,12 @@ model InternalConsumption {
   quantity        Int
   reason          String?
   consumedAt      DateTime @default(now())
+
   medicineBatch MedicineBatch @relation(fields: [medicineBatchId], references: [id])
+
   @@map("internal_consumption")
 }
+
 // Records that a prescribed medicine was actually dispensed to the patient (FEFO-selected batch).
 model Dispense {
   id             String   @id @default(cuid())
@@ -684,23 +818,30 @@ model Dispense {
   invoiceId      String?
   dispensedAt    DateTime @default(now())
   dispensedBy    String?
+
   prescription Prescription   @relation(fields: [prescriptionId], references: [id])
   invoice      Invoice?       @relation(fields: [invoiceId], references: [id])
   items        DispenseItem[]
+
   @@map("dispenses")
 }
+
 model DispenseItem {
   id              String @id @default(cuid())
   dispenseId      String
   medicineBatchId String
   quantity        Int
+
   dispense      Dispense      @relation(fields: [dispenseId], references: [id], onDelete: Cascade)
   medicineBatch MedicineBatch @relation(fields: [medicineBatchId], references: [id])
+
   @@map("dispense_items")
 }
+
 // ---------------------------------------------------------------------------
 // BILLING
 // ---------------------------------------------------------------------------
+
 enum InvoiceItemCategory {
   CONSULTATION
   PHARMACY
@@ -709,6 +850,7 @@ enum InvoiceItemCategory {
   ROOM_CHARGE
   OTHER
 }
+
 model Invoice {
   id          String        @id @default(cuid())
   branchId    String
@@ -720,15 +862,18 @@ model Invoice {
   amountPaid  Decimal       @db.Decimal(12, 2) @default(0)
   status      InvoiceStatus @default(PENDING)
   createdAt   DateTime      @default(now())
+
   branch     Branch        @relation(fields: [branchId], references: [id])
   patient    Patient       @relation(fields: [patientId], references: [id])
   items      InvoiceItem[]
   payments   Payment[]
   creditNotes CreditNote[]
   dispenses  Dispense[]
+
   @@index([branchId, createdAt])
   @@map("invoices")
 }
+
 model InvoiceItem {
   id          String              @id @default(cuid())
   invoiceId   String
@@ -738,9 +883,12 @@ model InvoiceItem {
   unitPrice   Decimal             @db.Decimal(10, 2)
   gstPercent  Decimal             @db.Decimal(5, 2) @default(0)
   amount      Decimal             @db.Decimal(10, 2)
+
   invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
   @@map("invoice_items")
 }
+
 model Payment {
   id            String      @id @default(cuid())
   invoiceId     String
@@ -748,9 +896,12 @@ model Payment {
   mode          PaymentMode
   referenceNo   String?
   paidAt        DateTime    @default(now())
+
   invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
   @@map("payments")
 }
+
 // Partial/full reversal of an invoice — e.g. returned medicine, billing correction.
 model CreditNote {
   id        String   @id @default(cuid())
@@ -758,9 +909,12 @@ model CreditNote {
   amount    Decimal  @db.Decimal(12, 2)
   reason    String
   createdAt DateTime @default(now())
+
   invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
   @@map("credit_notes")
 }
+
 // Cash/online refund against a credit note or overpayment.
 model Refund {
   id           String      @id @default(cuid())
@@ -769,11 +923,14 @@ model Refund {
   mode         PaymentMode
   reason       String?
   processedAt  DateTime    @default(now())
+
   @@map("refunds")
 }
+
 // ---------------------------------------------------------------------------
 // STAFF / HR / PAYROLL / ATTENDANCE
 // ---------------------------------------------------------------------------
+
 model Staff {
   id             String   @id @default(cuid())
   userId         String   @unique
@@ -785,13 +942,16 @@ model Staff {
   bankIFSC       String?
   panNo          String?
   joinedAt       DateTime @default(now())
+
   user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   attendance     Attendance[]
   shiftRoster    ShiftRoster[]
   leaveRequests  LeaveRequest[]
   payslips       Payslip[]
+
   @@map("staff")
 }
+
 enum AttendanceStatus {
   PRESENT
   ABSENT
@@ -799,6 +959,7 @@ enum AttendanceStatus {
   ON_LEAVE
   HOLIDAY
 }
+
 model Attendance {
   id        String            @id @default(cuid())
   staffId   String
@@ -807,38 +968,47 @@ model Attendance {
   checkOut  DateTime?
   status    AttendanceStatus  @default(PRESENT)
   note      String?
+
   staff Staff @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
   @@unique([staffId, date])
   @@index([staffId, date])
   @@map("attendance")
 }
+
 enum ShiftType {
   MORNING
   EVENING
   NIGHT
   OFF
 }
+
 model ShiftRoster {
   id        String    @id @default(cuid())
   staffId   String
   date      DateTime  @db.Date
   shiftType ShiftType
+
   staff Staff @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
   @@unique([staffId, date])
   @@index([staffId, date])
   @@map("shift_roster")
 }
+
 enum LeaveType {
   CASUAL
   SICK
   EARNED
   UNPAID
 }
+
 enum LeaveStatus {
   PENDING
   APPROVED
   REJECTED
 }
+
 model LeaveRequest {
   id           String      @id @default(cuid())
   staffId      String
@@ -849,10 +1019,13 @@ model LeaveRequest {
   status       LeaveStatus @default(PENDING)
   approvedById String?
   createdAt    DateTime    @default(now())
+
   staff Staff @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
   @@index([staffId, status])
   @@map("leave_requests")
 }
+
 // Monthly payslip — computed from basic salary, standard allowance/deduction rules, and attendance for the month.
 model Payslip {
   id             String   @id @default(cuid())
@@ -868,13 +1041,17 @@ model Payslip {
   netPay         Decimal  @db.Decimal(10, 2)
   generatedAt    DateTime @default(now())
   paidAt         DateTime?
+
   staff Staff @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
   @@unique([staffId, month, year])
   @@map("payslips")
 }
+
 // ---------------------------------------------------------------------------
 // SYSTEM
 // ---------------------------------------------------------------------------
+
 model AuditLog {
   id        String   @id @default(cuid())
   userId    String?
@@ -882,10 +1059,13 @@ model AuditLog {
   module    String
   metadata  Json?
   createdAt DateTime @default(now())
+
   user User? @relation(fields: [userId], references: [id])
+
   @@index([userId, createdAt])
   @@map("audit_logs")
 }
+
 enum NotificationType {
   APPOINTMENT
   LOW_STOCK
@@ -895,6 +1075,7 @@ enum NotificationType {
   LAB_RESULT
   GENERAL
 }
+
 // In-app notification bell — email/SMS delivery is handled separately via lib/adapters/notification.ts.
 model Notification {
   id        String           @id @default(cuid())
@@ -905,10 +1086,13 @@ model Notification {
   link      String?
   isRead    Boolean          @default(false)
   createdAt DateTime         @default(now())
+
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId, isRead, createdAt])
   @@map("notifications")
 }
+
 // Extra Feature #11 — Hospital Announcement Board.
 model Announcement {
   id          String   @id @default(cuid())
@@ -917,10 +1101,13 @@ model Announcement {
   content     String
   createdById String?
   createdAt   DateTime @default(now())
+
   branch Branch @relation(fields: [branchId], references: [id])
+
   @@index([branchId, createdAt])
   @@map("announcements")
 }
+
 // Extra Feature #7 — Patient Feedback & NPS System.
 model Feedback {
   id            String   @id @default(cuid())
@@ -930,17 +1117,21 @@ model Feedback {
   rating        Int // 1-5
   comment       String?
   createdAt     DateTime @default(now())
+
   patient Patient @relation(fields: [patientId], references: [id])
   doctor  Doctor? @relation(fields: [doctorId], references: [id])
+
   @@index([doctorId])
   @@map("feedback")
 }
+
 enum ComplaintStatus {
   OPEN
   IN_PROGRESS
   RESOLVED
   CLOSED
 }
+
 // Extra Feature #8 — Complaint/Grievance Management with SLA tracking.
 model Complaint {
   id           String          @id @default(cuid())
@@ -953,11 +1144,14 @@ model Complaint {
   assignedToId String?
   resolvedAt   DateTime?
   createdAt    DateTime        @default(now())
+
   branch  Branch   @relation(fields: [branchId], references: [id])
   patient Patient? @relation(fields: [patientId], references: [id])
+
   @@index([branchId, status])
   @@map("complaints")
 }
+
 // Extra Feature #4 — Vaccination Tracker & Reminder Board.
 model VaccinationRecord {
   id             String    @id @default(cuid())
@@ -967,11 +1161,14 @@ model VaccinationRecord {
   givenDate      DateTime?
   dueDate        DateTime
   administeredBy String?
+
   patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
   @@index([patientId])
   @@index([dueDate])
   @@map("vaccination_records")
 }
+
 // Extra Feature #30 — Chronic Disease Registry, feeds Extra Feature #31 Recall Campaigns.
 model ChronicCondition {
   id            String   @id @default(cuid())
@@ -980,16 +1177,38 @@ model ChronicCondition {
   diagnosedDate DateTime?
   notes         String?
   createdAt     DateTime @default(now())
+
   patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
   @@index([condition])
   @@map("chronic_conditions")
 }
+
+// Uploaded photos of lab reports, scans, prescriptions from elsewhere, etc., attached to a patient's record.
+model PatientDocument {
+  id         String   @id @default(cuid())
+  patientId  String
+  url        String
+  fileName   String
+  fileType   String?
+  category   String? // e.g. "Lab Report", "Scan", "Prescription", "Other"
+  uploadedBy String?
+  uploadedAt DateTime @default(now())
+
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([patientId, uploadedAt])
+  @@map("patient_documents")
+}
+
 model SystemSetting {
   id         String   @id @default(cuid())
   hospitalId String
   key        String
   value      Json
+
   hospital Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
   @@unique([hospitalId, key])
   @@map("system_settings")
 }

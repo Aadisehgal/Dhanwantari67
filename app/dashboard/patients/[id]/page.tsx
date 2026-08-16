@@ -1,7 +1,8 @@
 export const dynamic = "force-dynamic";
 
-import { getPatientById } from "@/actions/patients";
+import { getPatientById, deletePatientDocument } from "@/actions/patients";
 import { notFound } from "next/navigation";
+import { DocumentUploader } from "@/components/patients/DocumentUploader";
 
 export default async function PatientProfilePage({
   params,
@@ -78,15 +79,67 @@ export default async function PatientProfilePage({
             )}
             <ul className="space-y-1 text-sm">
               {patient.vitals.map((v) => (
-                <li key={v.id} className="flex gap-4 text-neutral-600 dark:text-neutral-300">
+                <li key={v.id} className="flex flex-wrap gap-4 text-neutral-600 dark:text-neutral-300">
                   <span>{new Date(v.recordedAt).toLocaleDateString()}</span>
                   <span>BP {v.bp ?? "—"}</span>
                   <span>Pulse {v.pulse ?? "—"}</span>
+                  <span>Temp {v.temperature ?? "—"}°F</span>
+                  <span>Sugar {v.bloodSugar ?? "—"} mg/dL</span>
                   <span>SpO2 {v.spo2 ?? "—"}</span>
                   <span>BMI {v.bmi ?? "—"}</span>
                 </li>
               ))}
             </ul>
+          </section>
+
+          <section className="rounded-xl border border-neutral-200 bg-white p-5 dark:bg-neutral-900">
+            <h2 className="mb-3 font-semibold">Medical History</h2>
+            {patient.chronicConditions.length === 0 && (
+              <p className="text-sm text-neutral-400">No conditions recorded yet.</p>
+            )}
+            <ul className="flex flex-wrap gap-2">
+              {patient.chronicConditions.map((c) => (
+                <li
+                  key={c.id}
+                  className="rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-800"
+                >
+                  {c.condition}
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <section className="rounded-xl border border-neutral-200 bg-white p-5 dark:bg-neutral-900">
+            <h2 className="mb-3 font-semibold">Reports & Scans</h2>
+            <DocumentUploader patientId={patient.id} />
+            {patient.documents.length === 0 ? (
+              <p className="mt-3 text-sm text-neutral-400">No documents uploaded yet.</p>
+            ) : (
+              <ul className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                {patient.documents.map((doc) => (
+                  <li key={doc.id} className="group relative overflow-hidden rounded-lg border border-neutral-200 dark:border-neutral-800">
+                    <a href={doc.url} target="_blank" rel="noopener noreferrer">
+                      {doc.fileType?.startsWith("image/") ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={doc.url} alt={doc.fileName} className="h-28 w-full object-cover" />
+                      ) : (
+                        <div className="flex h-28 w-full items-center justify-center bg-neutral-100 text-xs text-neutral-500 dark:bg-neutral-800">
+                          {doc.fileName}
+                        </div>
+                      )}
+                    </a>
+                    <div className="flex items-center justify-between bg-neutral-50 px-2 py-1 text-xs dark:bg-neutral-800">
+                      <span className="truncate text-neutral-500">{doc.category}</span>
+                      <form action={deletePatientDocument.bind(null, doc.id, patient.id)}>
+                        <button type="submit" className="text-status-alert hover:underline">
+                          Delete
+                        </button>
+                      </form>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </section>
         </div>
 

@@ -67,6 +67,34 @@ export async function createPatient(input: PatientFormValues): Promise<CreatePat
     },
   });
 
+  // If any initial vitals were entered on the registration form, save them as the first vitals record.
+  const hasVitals =
+    data.vitalsBp || data.vitalsPulse || data.vitalsTemperature || data.vitalsBloodSugar;
+  if (hasVitals) {
+    await prisma.vitals.create({
+      data: {
+        patientId: patient.id,
+        bp: data.vitalsBp || undefined,
+        pulse: data.vitalsPulse ? parseInt(data.vitalsPulse, 10) : undefined,
+        temperature: data.vitalsTemperature ? parseFloat(data.vitalsTemperature) : undefined,
+        bloodSugar: data.vitalsBloodSugar ? parseFloat(data.vitalsBloodSugar) : undefined,
+      },
+    });
+  }
+
+  // If medical history was entered, split on commas into individual chronic condition records.
+  if (data.medicalHistory?.trim()) {
+    const conditions = data.medicalHistory
+      .split(",")
+      .map((c) => c.trim())
+      .filter(Boolean);
+    if (conditions.length > 0) {
+      await prisma.chronicCondition.createMany({
+        data: conditions.map((condition) => ({ patientId: patient.id, condition })),
+      });
+    }
+  }
+
   await prisma.auditLog.create({
     data: {
       userId: session.userId,
@@ -117,6 +145,8 @@ export async function getPatientById(patientId: string) {
       family: { include: { members: true } },
       vitals: { orderBy: { recordedAt: "desc" }, take: 10 },
       appointments: { orderBy: { scheduledAt: "desc" }, take: 10, include: { doctor: { include: { user: true } } } },
+      chronicConditions: { orderBy: { createdAt: "desc" } },
+      documents: { orderBy: { uploadedAt: "desc" } },
     },
   });
 }
@@ -137,5 +167,54 @@ export async function linkFamilyMember(patientId: string, familyCode: string) {
   });
 
   revalidatePath("/dashboard/patients");
+  return { ok: true };
+}
+
+/** Uploads a photo/scan of a report and attaches it to a patient's record. */
+export async function uploadPatientDocument(formData: FormData) {
+  const session = await requirePermission("PATIENTS", "EDIT");
+
+  const patientId = formData.get("patientId") as string;
+  const category = (formData.get("category") as string) || "Other";
+  const file = formData.get("file") as File | null;
+
+  if (!patientId || !file || file.size === 0) {
+    return { ok: false, error: "Missing patient or file" };
+  }
+
+  const { put } = await import("@vercel/blob");
+  const blob = await put(`patient-documents/${patientId}/${Date.now()}-${file.name}`, file, {
+    access: "public",
+  });
+
+  await prisma.patientDocument.create({
+    data: {
+      patientId,
+      url: blob.url,
+      fileName: file.name,
+      fileType: file.type,
+      category,
+      uploadedBy: session.userId,
+    },
+  });
+
+  revalidatePath(`/dashboard/patients/${patientId}`);
+  return { ok: true, url: blob.url };
+}
+
+/** Returns all uploaded documents (report photos/scans) for a patient, most recent first. */
+export async function getPatientDocuments(patientId: string) {
+  await requirePermission("PATIENTS", "VIEW");
+  return prisma.patientDocument.findMany({
+    where: { patientId },
+    orderBy: { uploadedAt: "desc" },
+  });
+}
+
+/** Deletes a single uploaded document record (does not remove the underlying blob). */
+export async function deletePatientDocument(documentId: string, patientId: string) {
+  await requirePermission("PATIENTS", "EDIT");
+  await prisma.patientDocument.delete({ where: { id: documentId } });
+  revalidatePath(`/dashboard/patients/${patientId}`);
   return { ok: true };
 }

@@ -18,6 +18,13 @@ export const patientSchema = z.object({
   familyId: z.string().optional().nullable(),
   // when true, caller confirms they've reviewed duplicate warnings and want to proceed anyway
   forceCreate: z.boolean().default(false),
+  // Optional initial vitals, recorded alongside registration if provided.
+  vitalsBp: z.string().optional().nullable(),
+  vitalsPulse: z.string().optional().nullable(),
+  vitalsTemperature: z.string().optional().nullable(),
+  vitalsBloodSugar: z.string().optional().nullable(),
+  // Optional medical history, comma-separated condition names (e.g. "Diabetes, Hypertension").
+  medicalHistory: z.string().optional().nullable(),
 });
 
 export type PatientFormValues = z.infer<typeof patientSchema>;

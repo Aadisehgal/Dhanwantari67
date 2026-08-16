@@ -6,6 +6,25 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getDashboardSummary } from "@/actions/reports";
 import { RoleStatWidgets } from "@/components/dashboard/RoleStatWidgets";
+import {
+  Users,
+  CalendarClock,
+  Pill,
+  Receipt,
+  BedDouble,
+  Scissors,
+  FlaskConical,
+  UsersRound,
+  BarChart3,
+  Megaphone,
+  Star,
+  MessageSquareWarning,
+  Syringe,
+  HeartPulse,
+  ShieldCheck,
+  Stethoscope,
+  type LucideIcon,
+} from "lucide-react";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -25,23 +44,26 @@ export default async function DashboardPage() {
       {stats && <RoleStatWidgets role={role} stats={stats} />}
 
       <div className="grid grid-cols-3 gap-4">
-        <NavCard href="/dashboard/patients" title="Patients" desc="Register & search UHID records" />
-        <NavCard href="/dashboard/appointments" title="Calendar & Appointments" desc="Book, reschedule, recurring visits" />
-        <NavCard href="/dashboard/pharmacy" title="Pharmacy & Inventory" desc="Stock, barcode, low-stock/expiry alerts" />
-        <NavCard href="/dashboard/billing" title="Billing" desc="GST invoices, payments, printable bills" />
-        <NavCard href="/dashboard/ipd" title="IPD — Wards & Beds" desc="Admission, nursing notes, discharge" />
-        <NavCard href="/dashboard/ot" title="Operation Theatre" desc="OT booking, surgeon schedule" />
-        <NavCard href="/dashboard/lab" title="Laboratory" desc="Order tests, results, printable reports" />
-        <NavCard href="/dashboard/hr" title="HR & Payroll" desc="Attendance, roster, leaves, payslips" />
-        <NavCard href="/dashboard/reports" title="Reports & Analytics" desc="Revenue, occupancy, diagnoses, workload" />
-        <NavCard href="/dashboard/announcements" title="Announcements" desc="Hospital notice board for staff" />
-        <NavCard href="/dashboard/feedback" title="Feedback & NPS" desc="Patient ratings, doctor satisfaction scores" />
-        <NavCard href="/dashboard/complaints" title="Complaints" desc="Grievance tickets with SLA tracking" />
-        <NavCard href="/dashboard/vaccinations" title="Vaccination Tracker" desc="Due-date reminders per patient" />
-        <NavCard href="/dashboard/chronic-registry" title="Chronic Disease Registry" desc="Tag patients, run recall campaigns" />
-        <NavCard href="/dashboard/settings/audit-logs" title="Audit Log" desc="Who changed what, when (admin only)" />
+        <NavCard href="/dashboard/patients" title="Patients" desc="Register & search UHID records" icon={Users} />
+        <NavCard href="/dashboard/appointments" title="Calendar & Appointments" desc="Book, reschedule, recurring visits" icon={CalendarClock} />
+        <NavCard href="/dashboard/pharmacy" title="Pharmacy & Inventory" desc="Stock, barcode, low-stock/expiry alerts" icon={Pill} />
+        <NavCard href="/dashboard/billing" title="Billing" desc="GST invoices, payments, printable bills" icon={Receipt} />
+        <NavCard href="/dashboard/ipd" title="IPD — Wards & Beds" desc="Admission, nursing notes, discharge" icon={BedDouble} />
+        <NavCard href="/dashboard/ot" title="Operation Theatre" desc="OT booking, surgeon schedule" icon={Scissors} />
+        <NavCard href="/dashboard/lab" title="Laboratory" desc="Order tests, results, printable reports" icon={FlaskConical} />
+        <NavCard href="/dashboard/hr" title="HR & Payroll" desc="Attendance, roster, leaves, payslips" icon={UsersRound} />
+        <NavCard href="/dashboard/reports" title="Reports & Analytics" desc="Revenue, occupancy, diagnoses, workload" icon={BarChart3} />
+        <NavCard href="/dashboard/announcements" title="Announcements" desc="Hospital notice board for staff" icon={Megaphone} />
+        <NavCard href="/dashboard/feedback" title="Feedback & NPS" desc="Patient ratings, doctor satisfaction scores" icon={Star} />
+        <NavCard href="/dashboard/complaints" title="Complaints" desc="Grievance tickets with SLA tracking" icon={MessageSquareWarning} />
+        <NavCard href="/dashboard/vaccinations" title="Vaccination Tracker" desc="Due-date reminders per patient" icon={Syringe} />
+        <NavCard href="/dashboard/chronic-registry" title="Chronic Disease Registry" desc="Tag patients, run recall campaigns" icon={HeartPulse} />
+        <NavCard href="/dashboard/settings/audit-logs" title="Audit Log" desc="Who changed what, when (admin only)" icon={ShieldCheck} />
         <div className="rounded-xl border border-neutral-200 bg-white p-5 dark:bg-neutral-900">
-          <h3 className="mb-2 font-semibold">Live Queue Boards</h3>
+          <div className="mb-2 flex items-center gap-2">
+            <Stethoscope className="h-5 w-5 text-brand-600" />
+            <h3 className="font-semibold">Live Queue Boards</h3>
+          </div>
           <ul className="space-y-1 text-sm">
             {doctors.map((d) => (
               <li key={d.id}>
@@ -58,13 +80,26 @@ export default async function DashboardPage() {
   );
 }
 
-function NavCard({ href, title, desc }: { href: string; title: string; desc: string }) {
+function NavCard({
+  href,
+  title,
+  desc,
+  icon: Icon,
+}: {
+  href: string;
+  title: string;
+  desc: string;
+  icon: LucideIcon;
+}) {
   return (
     <Link
       href={href}
       className="rounded-xl border border-neutral-200 bg-white p-5 transition hover:border-brand-500 dark:bg-neutral-900"
     >
-      <h3 className="mb-1 font-semibold text-brand-700">{title}</h3>
+      <div className="mb-2 flex items-center gap-2">
+        <Icon className="h-5 w-5 text-brand-600" />
+        <h3 className="font-semibold text-brand-700">{title}</h3>
+      </div>
       <p className="text-sm text-neutral-500">{desc}</p>
     </Link>
   );

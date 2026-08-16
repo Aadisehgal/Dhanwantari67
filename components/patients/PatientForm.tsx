@@ -25,6 +25,7 @@ export function PatientForm() {
   });
 
   const [ageInput, setAgeInput] = useState("");
+  const [city, setCity] = useState("");
 
   // Typing an age fills in an approximate date of birth (Jan 1 of the birth year).
   function handleAgeChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -42,11 +43,17 @@ export function PatientForm() {
     if (e.target.value) setAgeInput("");
   }
 
+  // City is shown as its own field for convenience but stored as part of the single address string.
+  function combineAddress(values: PatientFormValues): PatientFormValues {
+    const fullAddress = [city.trim(), values.address?.trim()].filter(Boolean).join(", ");
+    return { ...values, address: fullAddress || null };
+  }
+
   async function submit(values: PatientFormValues, force = false) {
     setSubmitting(true);
     setServerError(null);
 
-    const result = await createPatient({ ...values, forceCreate: force });
+    const result = await createPatient({ ...combineAddress(values), forceCreate: force });
 
     setSubmitting(false);
 
@@ -126,8 +133,40 @@ export function PatientForm() {
         </Field>
       </div>
 
-      <Field label="Address">
-        <textarea {...register("address")} className="input" rows={2} />
+      <div className="grid grid-cols-2 gap-4">
+        <Field label="City">
+          <input value={city} onChange={(e) => setCity(e.target.value)} className="input" placeholder="e.g. Yamunanagar" />
+        </Field>
+        <Field label="Address">
+          <input {...register("address")} className="input" placeholder="Street, locality" />
+        </Field>
+      </div>
+
+      <div className="rounded-lg border border-neutral-200 p-4 dark:border-neutral-800">
+        <h3 className="mb-3 font-semibold text-brand-700">Vitals (optional)</h3>
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <Field label="BP">
+            <input {...register("vitalsBp")} className="input" placeholder="120/80" />
+          </Field>
+          <Field label="Heartbeat (Pulse)">
+            <input type="number" {...register("vitalsPulse")} className="input" placeholder="72" />
+          </Field>
+          <Field label="Temperature (°F)">
+            <input type="number" step="0.1" {...register("vitalsTemperature")} className="input" placeholder="98.6" />
+          </Field>
+          <Field label="Blood Sugar (mg/dL)">
+            <input type="number" {...register("vitalsBloodSugar")} className="input" placeholder="100" />
+          </Field>
+        </div>
+      </div>
+
+      <Field label="Medical History / Existing Diseases (optional)">
+        <textarea
+          {...register("medicalHistory")}
+          className="input"
+          rows={2}
+          placeholder="e.g. Diabetes, Hypertension, Heart problem — separate multiple with commas"
+        />
       </Field>
 
       <div className="grid grid-cols-2 gap-4">
