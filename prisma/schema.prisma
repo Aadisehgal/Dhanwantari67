@@ -3,6 +3,7 @@
 // Later phases expand IPD/OT/Lab/Pharmacy/Billing/HR to full detail.
 
 generator client {
+  engineType = "client"
   provider = "prisma-client-js"
 }
 
