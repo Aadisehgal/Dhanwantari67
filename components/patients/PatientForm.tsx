@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
@@ -17,11 +17,32 @@ export function PatientForm() {
     register,
     handleSubmit,
     getValues,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<PatientFormValues>({
     resolver: zodResolver(patientSchema),
     defaultValues: { allergies: [], forceCreate: false },
   });
+
+  const [ageInput, setAgeInput] = useState("");
+  const dobValue = watch("dob");
+
+  // Typing an age fills in an approximate date of birth (Jan 1 of the birth year).
+  function handleAgeChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const age = e.target.value;
+    setAgeInput(age);
+    const parsedAge = parseInt(age, 10);
+    if (age && !Number.isNaN(parsedAge) && parsedAge >= 0 && parsedAge <= 130) {
+      const birthYear = new Date().getFullYear() - parsedAge;
+      setValue("dob", `${birthYear}-01-01`, { shouldValidate: true });
+    }
+  }
+
+  // Typing an exact DOB clears the approximate age helper so they don't fight each other.
+  useEffect(() => {
+    if (dobValue) setAgeInput("");
+  }, [dobValue]);
 
   async function submit(values: PatientFormValues, force = false) {
     setSubmitting(true);
@@ -57,6 +78,19 @@ export function PatientForm() {
         </Field>
         <Field label="Date of Birth">
           <input type="date" {...register("dob")} className="input" />
+          <div className="mt-1 flex items-center gap-2">
+            <span className="text-xs text-neutral-500">or just enter age:</span>
+            <input
+              type="number"
+              min={0}
+              max={130}
+              value={ageInput}
+              onChange={handleAgeChange}
+              placeholder="Age"
+              className="input w-20 py-1 text-sm"
+            />
+            <span className="text-xs text-neutral-500">years</span>
+          </div>
         </Field>
         <Field label="Gender">
           <select {...register("gender")} className="input">
@@ -70,7 +104,17 @@ export function PatientForm() {
           <input type="email" {...register("email")} className="input" placeholder="optional" />
         </Field>
         <Field label="Blood Group">
-          <input {...register("bloodGroup")} className="input" placeholder="B+" />
+          <select {...register("bloodGroup")} className="input">
+            <option value="">Select</option>
+            <option value="A+">A+</option>
+            <option value="A-">A-</option>
+            <option value="B+">B+</option>
+            <option value="B-">B-</option>
+            <option value="AB+">AB+</option>
+            <option value="AB-">AB-</option>
+            <option value="O+">O+</option>
+            <option value="O-">O-</option>
+          </select>
         </Field>
         <Field label="Govt ID Number">
           <input {...register("govtIdNumber")} className="input" placeholder="Aadhaar / other" />
