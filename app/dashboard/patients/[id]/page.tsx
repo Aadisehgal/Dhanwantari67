@@ -130,7 +130,9 @@ export default async function PatientProfilePage({
                     </a>
                     <div className="flex items-center justify-between bg-neutral-50 px-2 py-1 text-xs dark:bg-neutral-800">
                       <span className="truncate text-neutral-500">{doc.category}</span>
-                      <form action={deletePatientDocument.bind(null, doc.id, patient.id)}>
+                      <form action={deletePatientDocument}>
+                        <input type="hidden" name="documentId" value={doc.id} />
+                        <input type="hidden" name="patientId" value={patient.id} />
                         <button type="submit" className="text-status-alert hover:underline">
                           Delete
                         </button>

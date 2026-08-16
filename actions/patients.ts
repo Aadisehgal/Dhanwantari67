@@ -212,9 +212,10 @@ export async function getPatientDocuments(patientId: string) {
 }
 
 /** Deletes a single uploaded document record (does not remove the underlying blob). */
-export async function deletePatientDocument(documentId: string, patientId: string) {
+export async function deletePatientDocument(formData: FormData) {
   await requirePermission("PATIENTS", "EDIT");
+  const documentId = formData.get("documentId") as string;
+  const patientId = formData.get("patientId") as string;
   await prisma.patientDocument.delete({ where: { id: documentId } });
   revalidatePath(`/dashboard/patients/${patientId}`);
-  return { ok: true };
 }
