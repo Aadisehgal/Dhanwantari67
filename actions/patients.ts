@@ -48,65 +48,72 @@ export async function createPatient(input: PatientFormValues): Promise<CreatePat
 
   const uhid = await generateUHID(branchId);
 
-  const patient = await prisma.patient.create({
-    data: {
-      branchId,
-      uhid,
-      name: data.name,
-      dob: dobDate,
-      gender: data.gender ?? undefined,
-      phone: data.phone,
-      email: data.email || undefined,
-      bloodGroup: data.bloodGroup ?? undefined,
-      allergies: data.allergies ?? [],
-      govtIdNumber: data.govtIdNumber ?? undefined,
-      address: data.address ?? undefined,
-      emergencyName: data.emergencyName ?? undefined,
-      emergencyPhone: data.emergencyPhone ?? undefined,
-      familyId: data.familyId ?? undefined,
-    },
-  });
-
-  // If any initial vitals were entered on the registration form, save them as the first vitals record.
-  const hasVitals =
-    data.vitalsBp || data.vitalsPulse || data.vitalsTemperature || data.vitalsBloodSugar;
-  if (hasVitals) {
-    await prisma.vitals.create({
+  try {
+    const patient = await prisma.patient.create({
       data: {
-        patientId: patient.id,
-        bp: data.vitalsBp || undefined,
-        pulse: data.vitalsPulse ? parseInt(data.vitalsPulse, 10) : undefined,
-        temperature: data.vitalsTemperature ? parseFloat(data.vitalsTemperature) : undefined,
-        bloodSugar: data.vitalsBloodSugar ? parseFloat(data.vitalsBloodSugar) : undefined,
+        branchId,
+        uhid,
+        name: data.name,
+        dob: dobDate,
+        gender: data.gender ?? undefined,
+        phone: data.phone,
+        email: data.email || undefined,
+        bloodGroup: data.bloodGroup ?? undefined,
+        allergies: data.allergies ?? [],
+        govtIdNumber: data.govtIdNumber ?? undefined,
+        address: data.address ?? undefined,
+        emergencyName: data.emergencyName ?? undefined,
+        emergencyPhone: data.emergencyPhone ?? undefined,
+        familyId: data.familyId ?? undefined,
       },
     });
-  }
 
-  // If medical history was entered, split on commas into individual chronic condition records.
-  if (data.medicalHistory?.trim()) {
-    const conditions = data.medicalHistory
-      .split(",")
-      .map((c) => c.trim())
-      .filter(Boolean);
-    if (conditions.length > 0) {
-      await prisma.chronicCondition.createMany({
-        data: conditions.map((condition) => ({ patientId: patient.id, condition })),
+    // If any initial vitals were entered on the registration form, save them as the first vitals record.
+    const hasVitals =
+      data.vitalsBp || data.vitalsPulse || data.vitalsTemperature || data.vitalsBloodSugar;
+    if (hasVitals) {
+      await prisma.vitals.create({
+        data: {
+          patientId: patient.id,
+          bp: data.vitalsBp || undefined,
+          pulse: data.vitalsPulse ? parseInt(data.vitalsPulse, 10) : undefined,
+          temperature: data.vitalsTemperature ? parseFloat(data.vitalsTemperature) : undefined,
+          bloodSugar: data.vitalsBloodSugar ? parseFloat(data.vitalsBloodSugar) : undefined,
+        },
       });
     }
+
+    // If medical history was entered, split on commas into individual chronic condition records.
+    if (data.medicalHistory?.trim()) {
+      const conditions = data.medicalHistory
+        .split(",")
+        .map((c) => c.trim())
+        .filter(Boolean);
+      if (conditions.length > 0) {
+        await prisma.chronicCondition.createMany({
+          data: conditions.map((condition) => ({ patientId: patient.id, condition })),
+        });
+      }
+    }
+
+    await prisma.auditLog.create({
+      data: {
+        userId: session.userId,
+        action: "CREATE",
+        module: "PATIENTS",
+        metadata: { patientId: patient.id, uhid: patient.uhid },
+      },
+    });
+
+    revalidatePath("/dashboard/patients");
+
+    return { ok: true, patientId: patient.id, uhid: patient.uhid };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Failed to save patient. Please try again.",
+    };
   }
-
-  await prisma.auditLog.create({
-    data: {
-      userId: session.userId,
-      action: "CREATE",
-      module: "PATIENTS",
-      metadata: { patientId: patient.id, uhid: patient.uhid },
-    },
-  });
-
-  revalidatePath("/dashboard/patients");
-
-  return { ok: true, patientId: patient.id, uhid: patient.uhid };
 }
 
 export async function searchPatients(query: string) {

@@ -53,21 +53,25 @@ export function PatientForm() {
     setSubmitting(true);
     setServerError(null);
 
-    const result = await createPatient({ ...combineAddress(values), forceCreate: force });
+    try {
+      const result = await createPatient({ ...combineAddress(values), forceCreate: force });
 
-    setSubmitting(false);
+      if (!result.ok && result.duplicates?.length) {
+        setDuplicates(result.duplicates);
+        return;
+      }
+      if (!result.ok) {
+        setServerError(result.error ?? "Something went wrong");
+        return;
+      }
 
-    if (!result.ok && result.duplicates?.length) {
-      setDuplicates(result.duplicates);
-      return;
+      router.push(`/dashboard/patients/${result.patientId}`);
+      router.refresh();
+    } catch (err) {
+      setServerError(err instanceof Error ? err.message : "Unexpected error while saving patient");
+    } finally {
+      setSubmitting(false);
     }
-    if (!result.ok) {
-      setServerError(result.error ?? "Something went wrong");
-      return;
-    }
-
-    router.push(`/dashboard/patients/${result.patientId}`);
-    router.refresh();
   }
 
   return (
