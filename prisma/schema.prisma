@@ -3,7 +3,6 @@
 // Later phases expand IPD/OT/Lab/Pharmacy/Billing/HR to full detail.
 
 generator client {
-  engineType = "client"
   provider = "prisma-client-js"
 }
 
@@ -707,6 +706,7 @@ model MedicineBatch {
   branchId      String
   brandName     String
   genericName   String?
+  form          String? // e.g. Tablet, Syrup, Capsule, Cream, Injection, Syrup, Ointment, Drops, etc.
   batchNo       String
   expiryDate    DateTime
   purchasePrice Decimal  @db.Decimal(10, 2)

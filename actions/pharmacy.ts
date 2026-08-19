@@ -8,6 +8,7 @@ import { revalidatePath } from "next/cache";
 export interface NewBatchInput {
   brandName: string;
   genericName?: string;
+  form?: string;
   batchNo: string;
   expiryDate: string;
   purchasePrice: number;
@@ -30,6 +31,7 @@ export async function createMedicineBatch(input: NewBatchInput) {
       branchId,
       brandName: input.brandName,
       genericName: input.genericName,
+      form: input.form || undefined,
       batchNo: input.batchNo,
       expiryDate: new Date(input.expiryDate),
       purchasePrice: input.purchasePrice,

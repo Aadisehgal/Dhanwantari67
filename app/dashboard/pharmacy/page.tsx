@@ -38,6 +38,7 @@ export default async function PharmacyPage({
           <thead className="bg-neutral-100 text-left dark:bg-neutral-800">
             <tr>
               <th className="p-3">Brand</th>
+              <th className="p-3">Form</th>
               <th className="p-3">Batch</th>
               <th className="p-3">Expiry</th>
               <th className="p-3">Stock</th>
@@ -49,6 +50,7 @@ export default async function PharmacyPage({
             {batches.map((b) => (
               <tr key={b.id} className="border-t border-neutral-100 dark:border-neutral-800">
                 <td className="p-3">{b.brandName} <span className="text-xs text-neutral-400">{b.genericName}</span></td>
+                <td className="p-3 text-neutral-500">{b.form ?? "—"}</td>
                 <td className="p-3">{b.batchNo}</td>
                 <td className="p-3">{new Date(b.expiryDate).toLocaleDateString()}</td>
                 <td className={`p-3 ${b.stockQty <= b.minStockQty ? "font-semibold text-status-alert" : ""}`}>{b.stockQty}</td>

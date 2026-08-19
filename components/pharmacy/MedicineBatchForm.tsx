@@ -19,6 +19,7 @@ export function MedicineBatchForm() {
     const res = await createMedicineBatch({
       brandName: String(fd.get("brandName")),
       genericName: String(fd.get("genericName") ?? ""),
+      form: String(fd.get("form") ?? ""),
       batchNo: String(fd.get("batchNo")),
       expiryDate: String(fd.get("expiryDate")),
       purchasePrice: Number(fd.get("purchasePrice")),
@@ -66,6 +67,34 @@ export function MedicineBatchForm() {
         <input name="genericName" className="input" placeholder="Acetaminophen" />
       </label>
       <label className="block">
+        <span className="mb-1 block text-sm font-medium">Form / Type</span>
+        <select name="form" className="input" defaultValue="">
+          <option value="">Select</option>
+          <option>Tablet</option>
+          <option>Capsule</option>
+          <option>Syrup</option>
+          <option>Suspension</option>
+          <option>Injection</option>
+          <option>Drops</option>
+          <option>Cream</option>
+          <option>Ointment</option>
+          <option>Gel</option>
+          <option>Lotion</option>
+          <option>Powder</option>
+          <option>Inhaler</option>
+          <option>Spray</option>
+          <option>Syringe</option>
+          <option>Sachet</option>
+          <option>Solution</option>
+          <option>Mouthwash</option>
+          <option>Gargle</option>
+          <option>Shampoo</option>
+          <option>Soap</option>
+          <option>Toothpaste</option>
+          <option>Other</option>
+        </select>
+      </label>
+      <label className="block">
         <span className="mb-1 block text-sm font-medium">Batch No.</span>
         <input name="batchNo" required className="input" />
       </label>
@@ -78,7 +107,7 @@ export function MedicineBatchForm() {
         <input type="number" step="0.01" name="purchasePrice" required className="input" />
       </label>
       <label className="block">
-        <span className="mb-1 block text-sm font-medium">MRP (₹)</span>
+        <span className="mb-1 block text-sm font-medium">MRP / Retail Price (₹)</span>
         <input type="number" step="0.01" name="mrp" required className="input" />
       </label>
       <label className="block">
