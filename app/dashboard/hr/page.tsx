@@ -28,6 +28,9 @@ export default async function HRPage() {
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-brand-700">HR - Staff & Attendance</h1>
         <div className="flex gap-3">
+          <Link href="/dashboard/hr/doctors" className="rounded-lg border border-brand-500 px-4 py-2 text-sm font-semibold text-brand-700">
+            Doctors
+          </Link>
           <Link href="/dashboard/hr/roster" className="rounded-lg border border-brand-500 px-4 py-2 text-sm font-semibold text-brand-700">
             Shift Roster
           </Link>

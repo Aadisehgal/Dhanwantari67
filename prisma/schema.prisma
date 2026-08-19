@@ -707,6 +707,7 @@ model MedicineBatch {
   brandName     String
   genericName   String?
   form          String? // e.g. Tablet, Syrup, Capsule, Cream, Injection, Syrup, Ointment, Drops, etc.
+  packSize      String? // e.g. "Strip of 10", "Bottle of 60ml", "Single Unit" — price fields refer to this pack
   batchNo       String
   expiryDate    DateTime
   purchasePrice Decimal  @db.Decimal(10, 2)

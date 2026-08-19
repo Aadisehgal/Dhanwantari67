@@ -9,6 +9,7 @@ export function MedicineBatchForm() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [createdBarcode, setCreatedBarcode] = useState<string | null>(null);
+  const [showCustomPack, setShowCustomPack] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -20,6 +21,7 @@ export function MedicineBatchForm() {
       brandName: String(fd.get("brandName")),
       genericName: String(fd.get("genericName") ?? ""),
       form: String(fd.get("form") ?? ""),
+      packSize: String(fd.get("packSize") === "Other" ? fd.get("packSizeCustom") ?? "" : fd.get("packSize") ?? ""),
       batchNo: String(fd.get("batchNo")),
       expiryDate: String(fd.get("expiryDate")),
       purchasePrice: Number(fd.get("purchasePrice")),
@@ -95,6 +97,37 @@ export function MedicineBatchForm() {
         </select>
       </label>
       <label className="block">
+        <span className="mb-1 block text-sm font-medium">Pack Size</span>
+        <select
+          name="packSize"
+          className="input"
+          defaultValue=""
+          onChange={(e) => setShowCustomPack(e.target.value === "Other")}
+        >
+          <option value="">Select</option>
+          <option>Single Unit</option>
+          <option>Strip of 10</option>
+          <option>Strip of 15</option>
+          <option>Strip of 20</option>
+          <option>Bottle of 30ml</option>
+          <option>Bottle of 60ml</option>
+          <option>Bottle of 100ml</option>
+          <option>Box</option>
+          <option>Vial</option>
+          <option>Other</option>
+        </select>
+        {showCustomPack && (
+          <input
+            name="packSizeCustom"
+            className="input mt-2"
+            placeholder="e.g. Strip of 12, Jar of 500g"
+          />
+        )}
+        <p className="mt-1 text-xs text-neutral-400">
+          Purchase price and MRP below are for one of this pack size.
+        </p>
+      </label>
+      <label className="block">
         <span className="mb-1 block text-sm font-medium">Batch No.</span>
         <input name="batchNo" required className="input" />
       </label>
@@ -103,11 +136,11 @@ export function MedicineBatchForm() {
         <input type="date" name="expiryDate" required className="input" />
       </label>
       <label className="block">
-        <span className="mb-1 block text-sm font-medium">Purchase Price (₹)</span>
+        <span className="mb-1 block text-sm font-medium">Purchase Price (₹ per pack)</span>
         <input type="number" step="0.01" name="purchasePrice" required className="input" />
       </label>
       <label className="block">
-        <span className="mb-1 block text-sm font-medium">MRP / Retail Price (₹)</span>
+        <span className="mb-1 block text-sm font-medium">MRP / Retail Price (₹ per pack)</span>
         <input type="number" step="0.01" name="mrp" required className="input" />
       </label>
       <label className="block">

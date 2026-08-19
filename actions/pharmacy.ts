@@ -9,6 +9,7 @@ export interface NewBatchInput {
   brandName: string;
   genericName?: string;
   form?: string;
+  packSize?: string;
   batchNo: string;
   expiryDate: string;
   purchasePrice: number;
@@ -32,6 +33,7 @@ export async function createMedicineBatch(input: NewBatchInput) {
       brandName: input.brandName,
       genericName: input.genericName,
       form: input.form || undefined,
+      packSize: input.packSize || undefined,
       batchNo: input.batchNo,
       expiryDate: new Date(input.expiryDate),
       purchasePrice: input.purchasePrice,

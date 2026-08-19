@@ -59,6 +59,7 @@ export default async function DashboardPage() {
         <NavCard href="/dashboard/vaccinations" title="Vaccination Tracker" desc="Due-date reminders per patient" icon={Syringe} />
         <NavCard href="/dashboard/chronic-registry" title="Chronic Disease Registry" desc="Tag patients, run recall campaigns" icon={HeartPulse} />
         <NavCard href="/dashboard/settings/audit-logs" title="Audit Log" desc="Who changed what, when (admin only)" icon={ShieldCheck} />
+        <NavCard href="/dashboard/settings/permissions" title="Staff Access & Permissions" desc="Control what each role/staff member can do" icon={ShieldCheck} />
         <div className="rounded-xl border border-neutral-200 bg-white p-5 dark:bg-neutral-900">
           <div className="mb-2 flex items-center gap-2">
             <Stethoscope className="h-5 w-5 text-brand-600" />
