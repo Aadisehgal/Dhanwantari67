@@ -4,26 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/permissions";
 import { revalidatePath } from "next/cache";
 import { ModuleName, ActionName } from "@prisma/client";
-
-export const ALL_MODULES: ModuleName[] = [
-  "DASHBOARD",
-  "PATIENTS",
-  "APPOINTMENTS",
-  "QUEUE",
-  "OPD",
-  "IPD",
-  "OT",
-  "EMR",
-  "LAB",
-  "PHARMACY",
-  "BILLING",
-  "HR",
-  "REPORTS",
-  "SETTINGS",
-  "NOTIFICATIONS",
-];
-
-export const ALL_ACTIONS: ActionName[] = ["VIEW", "CREATE", "EDIT", "DELETE", "APPROVE", "EXPORT"];
+import { ALL_MODULES, ALL_ACTIONS } from "@/lib/permission-constants";
 
 /** Lists every role (standard + custom) so the admin can pick one to edit. */
 export async function listRoles() {

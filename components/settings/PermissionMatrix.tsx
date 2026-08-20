@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { setRolePermission, ALL_MODULES, ALL_ACTIONS } from "@/actions/role-permissions";
+import { setRolePermission } from "@/actions/role-permissions";
+import { ALL_MODULES, ALL_ACTIONS } from "@/lib/permission-constants";
 import type { ModuleName, ActionName } from "@prisma/client";
 
 type MatrixRow = { module: ModuleName; actions: { action: ActionName; granted: boolean }[] };
