@@ -5,8 +5,9 @@ import { listRoles } from "@/actions/role-permissions";
 
 export default async function PermissionsIndexPage() {
   const roles = await listRoles();
-  if (roles.length > 0) {
-    redirect(`/dashboard/settings/permissions/${roles[0].id}`);
+  const firstRole = roles[0];
+  if (firstRole) {
+    redirect(`/dashboard/settings/permissions/${firstRole.id}`);
   }
   return <div className="p-8">No roles found.</div>;
 }
