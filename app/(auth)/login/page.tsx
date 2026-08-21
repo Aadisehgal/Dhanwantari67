@@ -52,7 +52,7 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-              placeholder="admin@dhanwantari.demo"
+              placeholder="you@hospital.com"
             />
           </div>
           <div>
@@ -77,10 +77,6 @@ export default function LoginPage() {
             {loading ? "Signing in..." : "Sign In"}
           </button>
         </form>
-
-        <p className="mt-6 text-xs text-neutral-400">
-          Demo: admin@dhanwantari.demo / Demo@1234
-        </p>
       </div>
     </div>
   );
